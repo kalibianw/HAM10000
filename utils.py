@@ -1,4 +1,5 @@
 from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
+from imblearn.over_sampling import RandomOverSampler
 import pandas as pd
 import numpy as np
 import cv2
@@ -39,6 +40,24 @@ class DataModule:
         onehot_output = onehot_output.toarray()
 
         return onehot_output
+
+    def ros(self, imgs, labels, w=None, h=None, c=None):
+        oversample = RandomOverSampler()
+        if len(imgs.shape) > 2:
+            org_shape = imgs.shape
+            imgs = np.reshape(imgs, newshape=(org_shape[0], -1))
+            imgs, labels = oversample.fit_resample(imgs, labels)
+            imgs = np.reshape(imgs, newshape=(-1,) + org_shape[1:])
+
+            return imgs, labels
+        else:
+            if (w is None) or (h is None) or (c is None):
+                raise ValueError("width, height, channel must be not None")
+            imgs, labels = oversample.fit_resample(imgs, labels)
+            imgs, labels = np.array(imgs), np.array(labels)
+            imgs = np.reshape(imgs, newshape=(-1, h, w, c))
+
+            return imgs, labels
 
 
 class TrainModule:
