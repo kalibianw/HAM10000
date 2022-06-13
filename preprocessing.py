@@ -25,7 +25,7 @@ if ROS:
     oversample = RandomOverSampler()
     imgs = np.reshape(imgs, newshape=(org_shape[0], -1))
     imgs, labels = oversample.fit_resample(imgs, labels)
-    imgs = np.reshape(imgs, newshape=(-1, org_shape[1:]))
+    imgs = np.reshape(imgs, newshape=(-1, ) + org_shape[1:])
     print(imgs.shape, imgs.dtype)
     print(labels.shape)
 
