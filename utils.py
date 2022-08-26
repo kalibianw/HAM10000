@@ -29,20 +29,17 @@ class DataModule:
 
         return np.array(imgs)
 
-    def label_to_arr(self):
+    def label_to_arr(self, onehot=True):
         csv_df = pd.read_csv(f"{self.ROOT_PATH}/metadata.csv")
 
         ord_enc = OrdinalEncoder()
-        ord_output = ord_enc.fit_transform(np.expand_dims(csv_df["dx"].to_numpy(), axis=-1))
+        output = ord_enc.fit_transform(np.expand_dims(csv_df["dx"].to_numpy(), axis=-1))
+        if onehot:
+            onehot_enc = OneHotEncoder()
+            output = onehot_enc.fit_transform(output)
+            output = output.toarray()
 
-        return ord_output
-
-    def label_to_onehot(self, ord_label):
-        onehot_enc = OneHotEncoder()
-        onehot_output = onehot_enc.fit_transform(ord_label)
-        onehot_output = onehot_output.toarray()
-
-        return onehot_output
+        return output
 
     def ros(self, imgs, labels, w=None, h=None, c=None):
         oversample = RandomOverSampler()
