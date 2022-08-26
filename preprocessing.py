@@ -1,43 +1,58 @@
-from utils import DataModule
-
+from imblearn.over_sampling import RandomOverSampler
+from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
+import pandas as pd
 import numpy as np
 
-ROOT_PATH = "D:/AI/data/HAM10000"
-COMPRESSED = False
-# recommended ratio: 4:3
-W, H = 384, 288
+import os
+
+CSV_FILE_PATH = "D:/AI/data/HAM10000/metadata.csv"
+if os.path.exists(CSV_FILE_PATH) is False:
+    print("File doesn't exist.")
+TRAIN_CSV_EXPORT_PATH = "D:/AI/data/HAM10000/train.csv"
+TEST_CSV_EXPORT_PATH = "D:/AI/data/HAM10000/test.csv"
 TEST_SIZE = 0.3
-ROS = True
 
-dm = DataModule(root_path=ROOT_PATH)
+if __name__ == '__main__':
+    org_df = pd.read_csv(CSV_FILE_PATH)
+    print(org_df)
 
-imgs = dm.img_to_arr(width=W, height=H)
-print(imgs.shape, imgs.dtype)
+    image_paths = org_df["image_id"].to_numpy()
+    labels = org_df["dx"].to_numpy()
 
-labels = dm.label_to_arr()
-print(labels.shape)
+    ord_enc = LabelEncoder()
 
-if ROS:
-    imgs, labels = dm.ros(imgs, labels)
+    ros = RandomOverSampler()
+    image_paths, labels = ros.fit_resample(
+        X=np.expand_dims(image_paths, axis=-1),
+        y=np.expand_dims(labels, axis=-1)
+    )
 
-x_train, x_test, y_train, y_test = train_test_split(imgs, labels, test_size=TEST_SIZE)
-print(
-    x_train.shape,
-    x_test.shape,
-    y_train.shape,
-    y_test.shape
-)
+    labels = ord_enc.fit_transform(labels).flatten()
+    print(image_paths.shape, labels.shape)
+    print(type(image_paths), type(labels))
 
-if COMPRESSED:
-    np.savez_compressed(file=f"npz/ham10000_{W}x{H}_{ROS}_compressed.npz",
-                        x_train=x_train,
-                        x_test=x_test,
-                        y_train=y_train,
-                        y_test=y_test)
-else:
-    np.savez(file=f"npz/ham10000_{W}x{H}_{ROS}.npz",
-             x_train=x_train,
-             x_test=x_test,
-             y_train=y_train,
-             y_test=y_test)
+    train_image_paths, test_image_paths, train_labels, test_labels = train_test_split(image_paths, labels, test_size=TEST_SIZE)
+    print(
+        train_image_paths.shape,
+        test_image_paths.shape,
+        train_labels.shape,
+        test_labels.shape
+    )
+
+    train_df = pd.DataFrame(
+        {
+            "image_paths": train_image_paths.flatten(),
+            "labels": train_labels
+        },
+
+    )
+    test_df = pd.DataFrame(
+        {
+            "image_paths": test_image_paths.flatten(),
+            "labels": test_labels
+        }
+    )
+
+    train_df.to_csv(TRAIN_CSV_EXPORT_PATH, index=False)
+    test_df.to_csv(TEST_CSV_EXPORT_PATH, index=False)
