@@ -1,63 +1,28 @@
-from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
-from imblearn.over_sampling import RandomOverSampler
-import pandas as pd
 import numpy as np
 import cv2
 
 from keras.api.keras import models, layers, activations, initializers, losses, optimizers, metrics, callbacks
 from keras import mixed_precision
 
-from tqdm import tqdm
 import os
 
 import itertools
 import matplotlib.pyplot as plt
 
 
-class DataModule:
-    def __init__(self, root_path=None):
-        if root_path[-1] == "/":
-            root_path = root_path[:-1]
+class Generator:
+    def __init__(self, root_path, img_names, labels):
         self.ROOT_PATH = root_path
+        self.img_names = img_names
+        self.labels = labels
 
-    def img_to_arr(self, width, height) -> np.ndarray:
-        imgs = list()
-        for fname in tqdm(os.listdir(f"{self.ROOT_PATH}/images/"), desc="img_to_arr"):
-            img = cv2.imread(f"{self.ROOT_PATH}/images/{fname}")
-            img = cv2.resize(src=img, dsize=(width, height))
-            imgs.append(img)
+    def get_data_generator(self):
+        for img_name, label in zip(self.img_names, self.labels):
+            img_name += ".jpg"
+            img = cv2.imread(os.path.join(self.ROOT_PATH, f"images/{img_name}"))
+            img = cv2.resize(img, dsize=(384, 288))
 
-        return np.array(imgs)
-
-    def label_to_arr(self, onehot=True):
-        csv_df = pd.read_csv(f"{self.ROOT_PATH}/metadata.csv")
-
-        ord_enc = OrdinalEncoder()
-        output = ord_enc.fit_transform(np.expand_dims(csv_df["dx"].to_numpy(), axis=-1))
-        if onehot:
-            onehot_enc = OneHotEncoder()
-            output = onehot_enc.fit_transform(output)
-            output = output.toarray()
-
-        return output
-
-    def ros(self, imgs, labels, w=None, h=None, c=None):
-        oversample = RandomOverSampler()
-        if len(imgs.shape) > 2:
-            org_shape = imgs.shape
-            imgs = np.reshape(imgs, newshape=(org_shape[0], -1))
-            imgs, labels = oversample.fit_resample(imgs, labels)
-            imgs = np.reshape(imgs, newshape=(-1,) + org_shape[1:])
-
-            return imgs, labels
-        else:
-            if (w is None) or (h is None) or (c is None):
-                raise ValueError("width, height, channel must be not None")
-            imgs, labels = oversample.fit_resample(imgs, labels)
-            imgs, labels = np.array(imgs), np.array(labels)
-            imgs = np.reshape(imgs, newshape=(-1, h, w, c))
-
-            return imgs, labels
+            yield img, label
 
 
 class TrainModule:
@@ -122,9 +87,9 @@ class TrainModule:
 
         return model
 
-    def training(self, model: models.Model, x_train, x_valid, y_train, y_valid):
+    def training(self, model: models.Model, train_dataset, valid_dataset):
         model.fit(
-            x={"img": x_train}, y={"cls_out": y_train},
+            train_dataset,
             batch_size=self.BATCH_SIZE,
             epochs=1000,
             verbose=1,
@@ -150,9 +115,7 @@ class TrainModule:
                     verbose=1
                 )
             ],
-            validation_data=(
-                {"img": x_valid}, {"cls_out": y_valid}
-            )
+            validation_data=valid_dataset
         )
         model.load_weights(self.CKPT_PATH)
         model.save(self.MODEL_PATH)
