@@ -12,6 +12,7 @@ if os.path.exists(CSV_FILE_PATH) is False:
 TRAIN_CSV_EXPORT_PATH = "D:/AI/data/HAM10000/train.csv"
 TEST_CSV_EXPORT_PATH = "D:/AI/data/HAM10000/test.csv"
 TEST_SIZE = 0.3
+ROS = True
 
 if __name__ == '__main__':
     org_df = pd.read_csv(CSV_FILE_PATH)
@@ -22,13 +23,15 @@ if __name__ == '__main__':
 
     ord_enc = LabelEncoder()
 
-    ros = RandomOverSampler()
-    image_paths, labels = ros.fit_resample(
-        X=np.expand_dims(image_paths, axis=-1),
-        y=np.expand_dims(labels, axis=-1)
-    )
+    if ROS:
+        ros = RandomOverSampler()
+        image_paths, labels = ros.fit_resample(
+            X=np.expand_dims(image_paths, axis=-1),
+            y=np.expand_dims(labels, axis=-1)
+        )
+        labels = labels.flatten()
 
-    labels = ord_enc.fit_transform(labels).flatten()
+    labels = ord_enc.fit_transform(labels)
     print(image_paths.shape, labels.shape)
     print(type(image_paths), type(labels))
 
