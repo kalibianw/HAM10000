@@ -24,7 +24,7 @@ def rmkdir(path):
     return path
 
 
-NPZ_PATH = f"npz/ham10000_512x384.npz"
+NPZ_PATH = f"npz/ham10000_384x288.npz"
 NPZ_FNAME = os.path.splitext(os.path.basename(NPZ_PATH))[0]
 CKPT_PATH = rmkdir(f"ckpt/{NPZ_FNAME}/{NPZ_FNAME}.ckpt")
 MODEL_PATH = mkdir(f"model/{NPZ_FNAME}.h5")
