@@ -10,8 +10,10 @@ CSV_FILE_PATH = "D:/AI/data/HAM10000/metadata.csv"
 if os.path.exists(CSV_FILE_PATH) is False:
     print("File doesn't exist.")
 TRAIN_CSV_EXPORT_PATH = "D:/AI/data/HAM10000/train.csv"
+VALID_CSV_EXPORT_PATH = "D:/AI/data/HAM10000/valid.csv"
 TEST_CSV_EXPORT_PATH = "D:/AI/data/HAM10000/test.csv"
 TEST_SIZE = 0.3
+VALID_SIZE = 0.2
 ROS = True
 
 if __name__ == '__main__':
@@ -36,10 +38,13 @@ if __name__ == '__main__':
     print(type(image_names), type(labels))
 
     train_image_names, test_image_names, train_labels, test_labels = train_test_split(image_names, labels, test_size=TEST_SIZE)
+    train_image_names, valid_image_names, train_labels, valid_labels = train_test_split(train_image_names, train_labels, test_size=VALID_SIZE)
     print(
         train_image_names.shape,
+        valid_image_names.shape,
         test_image_names.shape,
         train_labels.shape,
+        valid_labels.shape,
         test_labels.shape
     )
 
@@ -50,6 +55,12 @@ if __name__ == '__main__':
         },
 
     )
+    valid_df = pd.DataFrame(
+        {
+            "image_names": valid_image_names.flatten(),
+            "labels": valid_labels
+        }
+    )
     test_df = pd.DataFrame(
         {
             "image_names": test_image_names.flatten(),
@@ -58,4 +69,5 @@ if __name__ == '__main__':
     )
 
     train_df.to_csv(TRAIN_CSV_EXPORT_PATH, index=False)
+    valid_df.to_csv(VALID_CSV_EXPORT_PATH, index=False)
     test_df.to_csv(TEST_CSV_EXPORT_PATH, index=False)
