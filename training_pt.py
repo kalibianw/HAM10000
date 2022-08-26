@@ -28,7 +28,7 @@ if __name__ == '__main__':
     train_df = pd.read_csv(TRAIN_CSV_FILE_PATH)
     train_cid = CustomImageDataset(
         root_path=os.path.dirname(TRAIN_CSV_FILE_PATH),
-        img_paths=train_df["image_paths"].to_numpy(),
+        img_names=train_df["image_names"].to_numpy(),
         labels=np.expand_dims(train_df["labels"].to_numpy(), axis=-1)
     )
     train_loader = DataLoader(train_cid, batch_size=BATCH_SIZE, shuffle=True)
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     test_df = pd.read_csv(TEST_CSV_FILE_PATH)
     test_cid = CustomImageDataset(
         root_path=os.path.dirname(TEST_CSV_FILE_PATH),
-        img_paths=test_df["image_paths"].to_numpy(),
+        img_names=test_df["image_names"].to_numpy(),
         labels=np.expand_dims(test_df["labels"].to_numpy, axis=-1)
     )
     test_loader = DataLoader(test_cid, batch_size=BATCH_SIZE, shuffle=True)

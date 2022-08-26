@@ -12,23 +12,23 @@ import os
 
 
 class CustomImageDataset(Dataset):
-    def __init__(self, root_path, img_paths, labels, dsize=(288, 384), transform=None):
+    def __init__(self, root_path, img_names, labels, dsize=(288, 384), transform=None):
         """
         :param dsize: (height, width)
         """
         self.root_path = root_path
-        self.x_data = img_paths
-        self.y_data = labels
+        self.image_names = img_names
+        self.labels = labels
         self.dsize = dsize
         self.transform = transform
 
     def __len__(self):
-        return len(self.y_data)
+        return len(self.labels)
 
     def __getitem__(self, idx):
-        x = read_image(os.path.join(self.root_path, f"images/{self.x_data[idx]}.jpg"))
+        x = read_image(os.path.join(self.root_path, f"images/{self.image_names[idx]}.jpg"))
         x = tff.resize(x, self.dsize)
-        y = torch.Tensor(self.y_data[idx])
+        y = torch.Tensor(self.labels[idx])
 
         if self.transform:
             x = self.transform(x)
