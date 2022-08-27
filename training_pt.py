@@ -1,4 +1,4 @@
-from utils_pt import CustomImageDataset, Model, ANNModule
+from utils_pt import CustomImageDatasetLoadAllIntoMemory, Model, ANNModule
 
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -30,11 +30,11 @@ DSIZE = (288, 384)
 def read_csv(csv_file_path):
     df = pd.read_csv(csv_file_path)
     total_batch_size = math.ceil(len(df["labels"]) / BATCH_SIZE)
-    cid = CustomImageDataset(
+    cid = CustomImageDatasetLoadAllIntoMemory(
         root_path=os.path.dirname(csv_file_path),
         image_names=df["image_names"].to_numpy(),
         labels=np.expand_dims(df["labels"].to_numpy(), axis=-1),
-        transform=torch.nn.Sequential(
+        pre_transform=torch.nn.Sequential(
             transforms.Resize(DSIZE)
         )
     )
