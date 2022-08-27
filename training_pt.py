@@ -1,6 +1,7 @@
 from utils_pt import CustomImageDataset, Model, ANNModule
 
 from torch.utils.data import DataLoader
+from torchvision import transforms
 import pandas as pd
 import numpy as np
 
@@ -23,25 +24,28 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Torch version: {torch.__version__} - Device: {DEVICE}")
 BATCH_SIZE = 32
 NUM_EPOCHS = 5
+DSIZE = (288, 384)
+
+
+def read_csv(csv_file_path):
+    df = pd.read_csv(csv_file_path)
+    total_batch_size = math.ceil(len(df["labels"]) / BATCH_SIZE)
+    cid = CustomImageDataset(
+        root_path=os.path.dirname(csv_file_path),
+        image_names=df["image_names"].to_numpy(),
+        labels=np.expand_dims(df["labels"].to_numpy(), axis=-1),
+        transform=torch.nn.Sequential(
+            transforms.Resize(DSIZE)
+        )
+    )
+    loader = DataLoader(cid, batch_size=BATCH_SIZE, shuffle=True)
+
+    return total_batch_size, loader
+
 
 if __name__ == '__main__':
-    train_df = pd.read_csv(TRAIN_CSV_FILE_PATH)
-    train_cid = CustomImageDataset(
-        root_path=os.path.dirname(TRAIN_CSV_FILE_PATH),
-        img_names=train_df["image_names"].to_numpy(),
-        labels=np.expand_dims(train_df["labels"].to_numpy(), axis=-1)
-    )
-    train_loader = DataLoader(train_cid, batch_size=BATCH_SIZE, shuffle=True)
-    train_total_batch_size = math.ceil(len(train_df["labels"]) / 32)
-
-    test_df = pd.read_csv(TEST_CSV_FILE_PATH)
-    test_cid = CustomImageDataset(
-        root_path=os.path.dirname(TEST_CSV_FILE_PATH),
-        img_names=test_df["image_names"].to_numpy(),
-        labels=np.expand_dims(test_df["labels"].to_numpy, axis=-1)
-    )
-    test_loader = DataLoader(test_cid, batch_size=BATCH_SIZE, shuffle=True)
-    test_total_batch_size = math.ceil(len(test_df["labels"]) / 32)
+    train_total_batch_size, train_loader = read_csv(TRAIN_CSV_FILE_PATH)
+    test_total_batch_size, test_loader = read_csv(TEST_CSV_FILE_PATH)
 
     model = Model().to(DEVICE)
 
@@ -51,7 +55,7 @@ if __name__ == '__main__':
     torch.onnx.export(
         model,
         dummy_data,
-        "model/pt.onnx"
+        "model/pt_empty.onnx"
     )
 
     optimizer = torch.optim.Adam(model.parameters())

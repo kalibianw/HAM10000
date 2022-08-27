@@ -12,14 +12,13 @@ import os
 
 
 class CustomImageDataset(Dataset):
-    def __init__(self, root_path, img_names, labels, dsize=(288, 384), transform=None):
+    def __init__(self, root_path, image_names, labels, transform=None):
         """
         :param dsize: (height, width)
         """
         self.root_path = root_path
-        self.image_names = img_names
+        self.image_names = image_names
         self.labels = labels
-        self.dsize = dsize
         self.transform = transform
 
     def __len__(self):
@@ -27,13 +26,36 @@ class CustomImageDataset(Dataset):
 
     def __getitem__(self, idx):
         x = read_image(os.path.join(self.root_path, f"images/{self.image_names[idx]}.jpg"))
-        x = tff.resize(x, self.dsize)
+        x = self.transform(x)
         y = torch.Tensor(self.labels[idx])
 
-        if self.transform:
-            x = self.transform(x)
-
         return x, y
+
+
+class CustomImageDatasetLoadAllIntoMemory(Dataset):
+    def __init__(self, root_path, image_names, labels, dsize=(288, 384), pre_transform=None, transform=None):
+        """
+        :param dsize: (height, width)
+        """
+        self.root_path = root_path
+        self.image_names = image_names
+        self.labels = labels
+        self.dsize = dsize
+        self.transform = transform
+
+        self.x = list()
+        for image_name in image_names:
+            img = read_image(os.path.join(self.root_path, f"images/{image_name}.jpg"))
+            self.x.append(pre_transform(img))
+        self.y = labels
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        x, y = self.transform(self.x[idx]), self.y[idx]
+
+        return x, torch.tensor(y)
 
 
 class ResBlock(nn.Module):
