@@ -240,13 +240,14 @@ class ANNModule:
         with torch.no_grad():
             for image, label in tqdm(test_loader, desc="Evaluate...", total=total_batch_size):
                 image = image.to(self.DEVICE)
-                image = image.float
                 label = label.to(self.DEVICE)
-                label = label.long
+                image = image.float()
+                label = label.long()
 
                 output = self.model(image)
+                test_loss = self.criterion(output, label.squeeze(dim=-1))
 
-                test_loss += self.criterion(output, label).item()
+                test_loss += test_loss.item()
                 prediction = output.max(1, keepdim=True)[1]
                 correct += prediction.eq(label.view_as(prediction)).sum().item()
 
