@@ -23,7 +23,7 @@ if os.path.exists(TEST_CSV_FILE_PATH) is False:
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Torch version: {torch.__version__} - Device: {DEVICE}")
 BATCH_SIZE = 32
-NUM_EPOCHS = 50
+NUM_EPOCHS = 100
 QUANTITY_EACH_LABELS = -1
 DSIZE = (288, 384)
 
@@ -72,7 +72,7 @@ if __name__ == '__main__':
         "model/pt_empty.onnx"
     )
 
-    optimizer = torch.optim.Adam(model.parameters())
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     criterion = nn.CrossEntropyLoss()
 
     tm = ANNModule(

@@ -128,7 +128,7 @@ class Classifier(nn.Module):
 
     def forward(self, x):
         out = nnf.selu(self.linear1(x))
-        out = nnf.softmax(self.output(out))
+        out = nnf.softmax(self.output(out), dim=1)
 
         return out
 
@@ -218,11 +218,12 @@ class ANNModule:
             label = label.to(self.DEVICE)
             image = image.float()
             label = label.long()
+            label = label.squeeze(dim=-1)
 
             self.optimizer.zero_grad()
 
             output = self.model(image)
-            loss = self.criterion(output, label.squeeze(dim=-1))
+            loss = self.criterion(output, label)
             loss.backward()
 
             self.optimizer.step()
@@ -246,6 +247,7 @@ class ANNModule:
                 label = label.to(self.DEVICE)
                 image = image.float()
                 label = label.long()
+                label = label.squeeze(dim=-1)
 
                 output = self.model(image)
                 loss = self.criterion(output, label)
