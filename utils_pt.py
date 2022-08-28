@@ -248,9 +248,9 @@ class ANNModule:
                 label = label.long()
 
                 output = self.model(image)
-                test_loss = self.criterion(output, label.squeeze(dim=-1))
+                loss = self.criterion(output, label)
 
-                test_loss += test_loss.item()
+                test_loss += loss.item()
                 prediction = output.max(1, keepdim=True)[1]
                 correct += prediction.eq(label.view_as(prediction)).sum().item()
 
