@@ -23,17 +23,19 @@ if os.path.exists(TEST_CSV_FILE_PATH) is False:
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Torch version: {torch.__version__} - Device: {DEVICE}")
 BATCH_SIZE = 32
-NUM_EPOCHS = 5
+NUM_EPOCHS = 50
+QUANTITY_EACH_LABELS = -1
 DSIZE = (288, 384)
 
 
-def read_csv(csv_file_path):
+def read_csv(csv_file_path, quantity_each_labels=-1):
     df = pd.read_csv(csv_file_path)
-    total_batch_size = math.ceil(len(df["labels"]) / BATCH_SIZE)
+    image_names, labels = (df["image_names"].to_numpy(), df["labels"].to_numpy()) if quantity_each_labels < 0 else extract_small(df, num_each_label=quantity_each_labels)
+    total_batch_size = math.ceil(len(labels) / BATCH_SIZE)
     cid = CustomImageDatasetLoadAllIntoMemory(
         root_path=os.path.dirname(csv_file_path),
-        image_names=df["image_names"].to_numpy(),
-        labels=np.expand_dims(df["labels"].to_numpy(), axis=-1),
+        image_names=image_names,
+        labels=np.expand_dims(labels, axis=-1),
         pre_transform=torch.nn.Sequential(
             transforms.Resize(DSIZE)
         )
@@ -43,9 +45,21 @@ def read_csv(csv_file_path):
     return total_batch_size, loader
 
 
+def extract_small(df: pd.DataFrame, num_each_label):
+    new_image_names = list()
+    new_labels = list()
+    for unique_key in df["labels"].unique():
+        indices = df.index[df["labels"] == unique_key].tolist()
+        for index in indices[:num_each_label]:
+            new_image_names.append(df["image_names"].iloc[index])
+            new_labels.append(df["labels"].iloc[index])
+
+    return np.array(new_image_names), np.array(new_labels)
+
+
 if __name__ == '__main__':
-    train_total_batch_size, train_loader = read_csv(TRAIN_CSV_FILE_PATH)
-    test_total_batch_size, test_loader = read_csv(TEST_CSV_FILE_PATH)
+    train_total_batch_size, train_loader = read_csv(TRAIN_CSV_FILE_PATH, quantity_each_labels=QUANTITY_EACH_LABELS)
+    test_total_batch_size, test_loader = read_csv(TEST_CSV_FILE_PATH, quantity_each_labels=QUANTITY_EACH_LABELS)
 
     model = Model().to(DEVICE)
 
