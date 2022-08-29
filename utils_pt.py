@@ -128,7 +128,7 @@ class Classifier(nn.Module):
 
     def forward(self, x):
         out = nnf.selu(self.linear1(x))
-        out = nnf.softmax(self.output(out), dim=1)
+        out = nnf.log_softmax(self.output(out), dim=1)
 
         return out
 
