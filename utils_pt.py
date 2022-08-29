@@ -1,7 +1,5 @@
-from opt_einsum.backends import torch
 from torch.utils.data import Dataset
 from torchvision.io import read_image
-import torchvision.transforms.functional as tff
 
 import torch
 import torch.nn as nn
