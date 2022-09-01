@@ -28,6 +28,8 @@ NUM_EPOCHS = 100
 QUANTITY_EACH_LABELS = -1
 DSIZE = (288, 384)
 EARLY_STOPPING_PATIENCE = 10
+REDUCE_LR_PATIENCE = 3
+REDUCE_LR_RATE = 0.5
 
 
 def read_csv(csv_file_path, quantity_each_labels=-1):
@@ -60,6 +62,8 @@ def extract_small(df: pd.DataFrame, num_each_label):
 
 
 if __name__ == '__main__':
+    lr = 1e-3
+
     train_total_batch_size, train_loader = read_csv(TRAIN_CSV_FILE_PATH, quantity_each_labels=QUANTITY_EACH_LABELS)
     valid_total_batch_size, valid_loader = read_csv(VALID_CSV_FILE_PATH, quantity_each_labels=QUANTITY_EACH_LABELS)
 
@@ -74,12 +78,11 @@ if __name__ == '__main__':
         "model/pt_empty.onnx"
     )
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss()
 
     tm = ANNModule(
         model=model,
-        optimizer=optimizer,
         criterion=criterion,
         batch_size=32,
         device=DEVICE
@@ -92,9 +95,12 @@ if __name__ == '__main__':
 
     best_valid_loss = sys.float_info.max
     early_stopping_cnt = 0
+    reduce_lr_cnt = 0
     start_time = time.time()
     for epoch in range(1, NUM_EPOCHS + 1):
-        train_acc, train_loss = tm.train(train_loader, epoch_cnt=epoch, total_batch_size=train_total_batch_size)
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
+        train_acc, train_loss = tm.train(train_loader, optimizer=optimizer, epoch_cnt=epoch, total_batch_size=train_total_batch_size)
         print(f"\n[EPOCH: {epoch}] - Train Loss: {train_loss:.4f}; Train Accuracy: {train_acc:.2f}%")
 
         model, valid_acc, valid_loss = tm.evaluate(valid_loader, total_batch_size=valid_total_batch_size)
@@ -107,6 +113,7 @@ if __name__ == '__main__':
 
         if valid_loss < best_valid_loss:
             early_stopping_cnt = 0
+            reduce_lr_cnt = 0
             best_valid_loss = valid_loss
             torch.onnx.export(
                 model,
@@ -115,7 +122,14 @@ if __name__ == '__main__':
             )
         else:
             early_stopping_cnt += 1
-            print(f"valid loss didn't approved from {best_valid_loss}; current: {valid_loss}")
+            reduce_lr_cnt += 1
+            print(f"Valid loss didn't improved from {best_valid_loss}; current: {valid_loss}")
+            print(f"Early stopping - {early_stopping_cnt} / {EARLY_STOPPING_PATIENCE}")
+            print(f"Reduce LR - Current learning Rate: {lr}; {reduce_lr_cnt} / {REDUCE_LR_PATIENCE}")
+
+        if reduce_lr_cnt > REDUCE_LR_PATIENCE:
+            reduce_lr_cnt = 0
+            lr *= REDUCE_LR_RATE
 
         if early_stopping_cnt > EARLY_STOPPING_PATIENCE:
             break

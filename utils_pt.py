@@ -199,15 +199,14 @@ class Model(nn.Module):
 
 
 class ANNModule:
-    def __init__(self, model, optimizer, criterion, batch_size, device):
+    def __init__(self, model, criterion, batch_size, device):
         self.DEVICE = device
         self.BATCH_SIZE = batch_size
 
         self.model = model
-        self.optimizer = optimizer
         self.criterion = criterion
 
-    def train(self, train_loader, epoch_cnt, total_batch_size):
+    def train(self, train_loader, optimizer, epoch_cnt, total_batch_size):
         self.model.train()
         train_loss = 0
         correct = 0
@@ -219,13 +218,13 @@ class ANNModule:
             label = label.long()
             label = label.squeeze(dim=-1)
 
-            self.optimizer.zero_grad()
+            optimizer.zero_grad()
 
             output = self.model(image)
             loss = self.criterion(output, label)
             loss.backward()
 
-            self.optimizer.step()
+            optimizer.step()
 
             train_loss += loss.item()
             prediction = output.max(1, keepdim=True)[1]
