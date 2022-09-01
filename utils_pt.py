@@ -24,6 +24,7 @@ class CustomImageDataset(Dataset):
 
     def __getitem__(self, idx):
         x = read_image(os.path.join(self.root_path, f"images/{self.image_names[idx]}.jpg"))
+        x = x.to(torch.float32)
         x = self.transform(x)
         y = torch.Tensor(self.labels[idx])
 
