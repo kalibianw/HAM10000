@@ -125,13 +125,14 @@ if __name__ == '__main__':
             reduce_lr_cnt += 1
             print(f"Valid loss didn't improved from {best_valid_loss}; current: {valid_loss}")
             print(f"Early stopping - {early_stopping_cnt} / {EARLY_STOPPING_PATIENCE}")
-            print(f"Reduce LR - Current learning Rate: {lr}; {reduce_lr_cnt} / {REDUCE_LR_PATIENCE}")
-
-        if reduce_lr_cnt > REDUCE_LR_PATIENCE:
-            reduce_lr_cnt = 0
-            lr *= REDUCE_LR_RATE
-
-        if early_stopping_cnt > EARLY_STOPPING_PATIENCE:
-            break
+            if early_stopping_cnt >= EARLY_STOPPING_PATIENCE:
+                print("Early stopping triggered")
+                break
+            if reduce_lr_cnt >= REDUCE_LR_PATIENCE:
+                lr *= REDUCE_LR_RATE
+                reduce_lr_cnt = 0
+                print(f"Reduce LR triggered; Current learning rate: {lr}")
+                continue
+            print(f"Reduce LR - Current learning rate: {lr}; {reduce_lr_cnt} / {REDUCE_LR_PATIENCE}")
 
     print(f"Training time: {time.time() - start_time}s")
