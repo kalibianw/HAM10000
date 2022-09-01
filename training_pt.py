@@ -104,7 +104,7 @@ if __name__ == '__main__':
         print(f"\n[EPOCH: {epoch}] - Train Loss: {train_loss:.4f}; Train Accuracy: {train_acc:.2f}%")
 
         model, valid_acc, valid_loss = tm.evaluate(valid_loader, total_batch_size=valid_total_batch_size)
-        print(f"\n[EPOCH: {epoch}] - Test Loss: {valid_loss:.4f}; Test Accuracy: {valid_acc:.2f}%")
+        print(f"\n[EPOCH: {epoch}] - Valid Loss: {valid_loss:.4f}; Valid Accuracy: {valid_acc:.2f}%")
 
         writer.add_scalar("Loss/train", train_loss, epoch)
         writer.add_scalar("Loss/valid", valid_loss, epoch)
