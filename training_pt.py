@@ -13,19 +13,21 @@ import torch.nn as nn
 import os
 import time
 import math
+import sys
 
 TRAIN_CSV_FILE_PATH = "D:/AI/data/HAM10000/train.csv"
 if os.path.exists(TRAIN_CSV_FILE_PATH) is False:
     raise FileNotFoundError("Train csv file doesn't exists.")
-TEST_CSV_FILE_PATH = "D:/AI/data/HAM10000/test.csv"
-if os.path.exists(TEST_CSV_FILE_PATH) is False:
-    raise FileNotFoundError("Test csv file doesn't exists.")
+VALID_CSV_FILE_PATH = "D:/AI/data/HAM10000/valid.csv"
+if os.path.exists(VALID_CSV_FILE_PATH) is False:
+    raise FileNotFoundError("Valid csv file doesn't exists.")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Torch version: {torch.__version__} - Device: {DEVICE}")
 BATCH_SIZE = 32
 NUM_EPOCHS = 100
 QUANTITY_EACH_LABELS = -1
 DSIZE = (288, 384)
+EARLY_STOPPING_PATIENCE = 10
 
 
 def read_csv(csv_file_path, quantity_each_labels=-1):
@@ -59,7 +61,7 @@ def extract_small(df: pd.DataFrame, num_each_label):
 
 if __name__ == '__main__':
     train_total_batch_size, train_loader = read_csv(TRAIN_CSV_FILE_PATH, quantity_each_labels=QUANTITY_EACH_LABELS)
-    test_total_batch_size, test_loader = read_csv(TEST_CSV_FILE_PATH, quantity_each_labels=QUANTITY_EACH_LABELS)
+    valid_total_batch_size, valid_loader = read_csv(VALID_CSV_FILE_PATH, quantity_each_labels=QUANTITY_EACH_LABELS)
 
     model = Model().to(DEVICE)
 
@@ -88,16 +90,34 @@ if __name__ == '__main__':
     os.makedirs(log_path)
     writer = SummaryWriter(log_path)
 
+    best_valid_loss = sys.float_info.max
+    early_stopping_cnt = 0
     start_time = time.time()
     for epoch in range(1, NUM_EPOCHS + 1):
         train_acc, train_loss = tm.train(train_loader, epoch_cnt=epoch, total_batch_size=train_total_batch_size)
         print(f"\n[EPOCH: {epoch}] - Train Loss: {train_loss:.4f}; Train Accuracy: {train_acc:.2f}%")
 
-        test_acc, test_loss = tm.evaluate(test_loader, total_batch_size=test_total_batch_size)
-        print(f"\n[EPOCH: {epoch}] - Test Loss: {test_loss:.4f}; Test Accuracy: {test_acc:.2f}%")
+        model, valid_acc, valid_loss = tm.evaluate(valid_loader, total_batch_size=valid_total_batch_size)
+        print(f"\n[EPOCH: {epoch}] - Test Loss: {valid_loss:.4f}; Test Accuracy: {valid_acc:.2f}%")
 
         writer.add_scalar("Loss/train", train_loss, epoch)
-        writer.add_scalar("Loss/test", test_loss, epoch)
+        writer.add_scalar("Loss/valid", valid_loss, epoch)
         writer.add_scalar("Accuracy/train", train_acc, epoch)
-        writer.add_scalar("Accuracy/test", test_acc, epoch)
-    print(time.time() - start_time)
+        writer.add_scalar("Accuracy/valid", valid_acc, epoch)
+
+        if valid_loss < best_valid_loss:
+            early_stopping_cnt = 0
+            best_valid_loss = valid_loss
+            torch.onnx.export(
+                model,
+                dummy_data,
+                f"model/pt_[{valid_loss}].onnx"
+            )
+        else:
+            early_stopping_cnt += 1
+            print(f"valid loss didn't approved from {best_valid_loss}; current: {valid_loss}")
+
+        if early_stopping_cnt > EARLY_STOPPING_PATIENCE:
+            break
+
+    print(f"Training time: {time.time() - start_time}s")

@@ -258,4 +258,4 @@ class ANNModule:
         test_loss /= (len(test_loader.dataset) / self.BATCH_SIZE)
         test_acc = 100. * correct / len(test_loader.dataset)
 
-        return test_acc, test_loss
+        return self.model, test_acc, test_loss
