@@ -118,7 +118,7 @@ if __name__ == '__main__':
             torch.onnx.export(
                 model,
                 dummy_data,
-                f"model/pt_[{valid_loss}].onnx"
+                f"model/pt_[{valid_loss:.4f}].onnx"
             )
         else:
             early_stopping_cnt += 1
