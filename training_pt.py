@@ -110,6 +110,7 @@ if __name__ == '__main__':
         writer.add_scalar("Loss/valid", valid_loss, epoch)
         writer.add_scalar("Accuracy/train", train_acc, epoch)
         writer.add_scalar("Accuracy/valid", valid_acc, epoch)
+        writer.add_scalar("Learning rate/LR", lr, epoch)
 
         if valid_loss < best_valid_loss:
             early_stopping_cnt = 0
