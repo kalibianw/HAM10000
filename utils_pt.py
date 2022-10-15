@@ -25,7 +25,8 @@ class CustomImageDataset(Dataset):
     def __getitem__(self, idx):
         x = read_image(os.path.join(self.root_path, f"images/{self.image_names[idx]}.jpg"))
         x = x.to(torch.float32)
-        x = self.transform(x)
+        if self.transform is not None:
+            x = self.transform(x)
         y = torch.Tensor(self.labels[idx])
 
         return x, y
@@ -45,7 +46,9 @@ class CustomImageDatasetLoadAllIntoMemory(Dataset):
         self.x = list()
         for image_name in tqdm(image_names, desc="Load images...", total=len(labels)):
             img = read_image(os.path.join(self.root_path, f"images/{image_name}.jpg"))
-            self.x.append(pre_transform(img))
+            if pre_transform is not None:
+                img = pre_transform(img)
+            self.x.append(img)
         self.y = labels
 
     def __len__(self):
