@@ -1,4 +1,4 @@
-from utils_pt import CustomImageDatasetLoadAllIntoMemory, Model, ANNModule
+from utils_pt import CustomImageDataset, Model, ANNModule
 
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -36,11 +36,11 @@ def read_csv(csv_file_path, quantity_each_labels=-1):
     df = pd.read_csv(csv_file_path)
     image_names, labels = (df["image_names"].to_numpy(), df["labels"].to_numpy()) if quantity_each_labels < 0 else extract_small(df, num_each_label=quantity_each_labels)
     total_batch_size = math.ceil(len(labels) / BATCH_SIZE)
-    cid = CustomImageDatasetLoadAllIntoMemory(
+    cid = CustomImageDataset(
         root_path=os.path.dirname(csv_file_path),
         image_names=image_names,
         labels=np.expand_dims(labels, axis=-1),
-        pre_transform=torch.nn.Sequential(
+        transform=torch.nn.Sequential(
             transforms.Resize(DSIZE)
         )
     )
@@ -98,8 +98,6 @@ if __name__ == '__main__':
     reduce_lr_cnt = 0
     start_time = time.time()
     for epoch in range(1, NUM_EPOCHS + 1):
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-
         train_acc, train_loss = tm.train(train_loader, optimizer=optimizer, epoch_cnt=epoch, total_batch_size=train_total_batch_size)
         print(f"\n[EPOCH: {epoch}] - Train Loss: {train_loss:.4f}; Train Accuracy: {train_acc:.2f}%")
 
